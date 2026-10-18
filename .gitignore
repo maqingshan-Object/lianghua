@@ -1,0 +1,35 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+frontend/node_modules/
+
+# Java build output
+target/
+*.class
+*.jar
+
+# Databases & runtime data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+collector/*.log
+backend/collect.log
+
+# Env & secrets (never commit)
+.env
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml

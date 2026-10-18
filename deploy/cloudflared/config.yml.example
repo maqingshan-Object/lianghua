@@ -1,0 +1,42 @@
+# Cloudflare Tunnel 配置说明
+#
+# ============================================================
+# 默认方案：快速隧道（trycloudflare）——推荐，无需本文件
+# ============================================================
+# docker-compose.yml 里 cloudflared 服务已配好：
+#     command: tunnel --no-autoupdate --url http://api:8080
+# 启动后自动生成 https://xxx.trycloudflare.com 临时公网地址，
+# 免费、无需 Cloudflare 账号、无需买域名。
+#
+# 查看你的访问地址：
+#     docker compose -f deploy/docker-compose.yml logs cloudflared | grep trycloudflare
+# 日志里形如 "https://abc-def-1234.trycloudflare.com" 的就是，手机浏览器直接打开。
+#
+# 已知限制：cloudflared 容器重启后，临时域名会变（需重新看日志）。
+# 个人手机访问完全够用；以后想要固定地址，再买域名也不迟（见下）。
+#
+# 备选：花生壳（国内服务）也能做内网穿透，一句话备选，不展开。
+#
+# ============================================================
+# 进阶方案：命名隧道（固定域名，需要买域名 + Cloudflare 账号）
+# ============================================================
+# 哪天想要固定地址时再走这条路：
+#   1. 买域名并接到 Cloudflare（约几十元/年）
+#   2. cloudflared tunnel login && cloudflared tunnel create quant-tunnel
+#   3. 把 ~/.cloudflared/<TUNNEL_ID>.json 复制到本目录
+#   4. 复制下面的模板为 config.yml，替换 <TUNNEL_ID> 和域名
+#   5. cloudflared tunnel route dns quant-tunnel quant.example.com
+#   6. 把 docker-compose.yml 里 cloudflared 的 command 改成：
+#        command: tunnel --no-autoupdate run --config /etc/cloudflared/config.yml
+#      并加回 volumes:
+#        - ./cloudflared:/etc/cloudflared:ro
+#
+# 注意：config.yml 和 <TUNNEL_ID>.json 含隧道凭证，不要提交到公开仓库。
+
+# ---- 命名隧道 config.yml 模板（进阶用，默认用不到） ----
+# tunnel: <TUNNEL_ID>
+# credentials-file: /etc/cloudflared/<TUNNEL_ID>.json
+# ingress:
+#   - hostname: quant.example.com   # ← 换成你的域名
+#     service: http://api:8080
+#   - service: http_status:404

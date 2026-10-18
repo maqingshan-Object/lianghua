@@ -1,0 +1,42 @@
+# 量化选股系统 — 一键部署
+# 用法：在服务器上把整个 quant/ 目录传过去后执行：
+#   cd quant && docker compose -f deploy/docker-compose.yml up -d --build
+
+services:
+  api:
+    build:
+      context: ..                 # quant/ 根目录
+      dockerfile: deploy/Dockerfile
+    image: quant-api:1.0
+    container_name: quant-api
+    restart: unless-stopped
+    ports:
+      # 只绑本机，经 cloudflared 对外；如需局域网直连改为 "8080:8080"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # quant.db / logs / reports / backup 全部落在这里，容器重建不丢
+      - ../data:/data
+    environment:
+      - TZ=Asia/Shanghai
+      # DeepSeek API Key：只从宿主环境变量注入（部署时在服务器上设置，见 DEPLOY_CHECKLIST.md 第三节）。
+      # 此处绝不填写真实值；不设置则 AI 通道保持纯引擎模式。
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: quant-tunnel
+    restart: unless-stopped
+    # 快速隧道（trycloudflare）：自动生成 https://xxx.trycloudflare.com 临时公网地址，
+    # 免费、无需 Cloudflare 账号、无需域名。手机浏览器直接打开该地址即可访问。
+    # 注意：cloudflared 重启后地址会变；启动后在日志里找地址：
+    #   docker compose -f deploy/docker-compose.yml logs cloudflared | grep trycloudflare
+    # 以后想要固定地址，再买域名改用命名隧道（见 cloudflared/config.yml.example 底部）。
+    command: tunnel --no-autoupdate --url http://api:8080
+    depends_on:
+      api:
+        condition: service_healthy
