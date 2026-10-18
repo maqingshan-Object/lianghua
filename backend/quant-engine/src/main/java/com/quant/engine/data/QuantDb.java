@@ -6,6 +6,8 @@ import com.quant.engine.model.Stock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -26,6 +28,12 @@ public class QuantDb implements AutoCloseable {
     private final Connection conn;
 
     public QuantDb(String dbPath) throws SQLException {
+        try {
+            // git 不追踪空目录，data/ 可能不存在，先建好父目录
+            Files.createDirectories(Paths.get(dbPath).toAbsolutePath().getParent());
+        } catch (Exception e) {
+            throw new SQLException("无法创建数据库父目录: " + dbPath, e);
+        }
         this.conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
         this.conn.setAutoCommit(true);
         initM2Schema();

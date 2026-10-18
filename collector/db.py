@@ -1,5 +1,6 @@
 """SQLite 存储层：建表、增量查询、采集日志。"""
 
+import os
 import sqlite3
 from datetime import datetime
 
@@ -65,6 +66,8 @@ def utcnow() -> str:
 
 
 def get_conn(db_path: str) -> sqlite3.Connection:
+    parent = os.path.dirname(os.path.abspath(db_path))
+    os.makedirs(parent, exist_ok=True)  # git 不追踪空目录，data/ 可能不存在
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
