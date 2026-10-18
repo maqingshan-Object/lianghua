@@ -7,6 +7,8 @@
 - 所有网络异常内部消化返回空结果，由 collect.py 统一记日志/告警。
 """
 
+from __future__ import annotations  # 兼容 Python 3.9：str | None 等联合写法注解
+
 import logging
 import time
 
